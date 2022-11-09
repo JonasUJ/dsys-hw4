@@ -1,9 +1,5 @@
 package ricartagrawala
 
-import (
-	"github.com/JonasUJ/dsys-hw4/chittychat"
-)
-
 type Lamport interface {
 	GetTime() uint64
 	GetPid() uint32
