@@ -26,7 +26,3 @@ func (req Request) GetPid() uint32 {
 func (req Request) SetTime(time uint64) {
 	req.Time = time
 }
-
-func (req Request) Reply() {
-	
-}
