@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"google.golang.org/grpc"
 	"log"
 	"main/connect"
+	ra "main/ricart-agrawala"
 	"net"
 	"os"
+
+	"google.golang.org/grpc"
 )
 
 var (
@@ -16,6 +18,19 @@ var (
 	port = flag.String("port", "50050", "Port to listen on")
 	l    = log.Default()
 )
+
+func (server *Server) CriticalSection(chEnter, chExit chan struct{}) {
+	for {
+		<-chEnter
+		ra.Enter(server, 1 + len(server.peers))
+
+		// Do critical stuff
+		l.Println("In critical section")
+
+		<-chExit
+		ra.Exit(server)
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -32,11 +47,11 @@ func main() {
 	// We need a listener for grpc
 	listener, err := net.Listen("tcp", net.JoinHostPort("localhost", *port))
 	if err != nil {
-		log.Fatalf("fail to listen on port %d: %v", *port, err)
+		log.Fatalf("fail to listen on port %s: %v", *port, err)
 	}
-	defer listener.Close()
 
 	server := NewServer()
+	ra.Init(server)
 
 	// Serve grpc server in another thread as not to block user input
 	go func() {
@@ -47,6 +62,11 @@ func main() {
 		}
 	}()
 
+	// Put critical section in another thread as not to block user input
+	chEnter := make(chan struct{})
+	chExit := make(chan struct{})
+	go server.CriticalSection(chEnter, chExit)
+
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Type 'lock' to request the lock, and 'unlock' to release it.")
 	for scanner.Scan() {
@@ -55,7 +75,22 @@ func main() {
 		// Dispatch commands
 		switch input {
 		case "lock":
+			switch server.GetState() {
+			case ra.Held:
+				fmt.Println("Lock already held")
+			case ra.Wanted:
+				fmt.Println("Lock already wanted")
+			case ra.Released:
+				chEnter <- struct{}{}
+			}
 		case "unlock":
+			switch server.GetState() {
+			case ra.Wanted:
+			case ra.Released:
+				fmt.Println("Lock is not held")
+			case ra.Held:
+				chExit <- struct{}{}
+			}
 		default:
 			fmt.Printf("unknown command '%s'\n", input)
 		}
