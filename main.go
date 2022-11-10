@@ -36,7 +36,7 @@ func main() {
 	}
 	defer listener.Close()
 
-	server := &Server{peers: make(map[string]*Peer)}
+	server := NewServer()
 
 	// Serve grpc server in another thread as not to block user input
 	go func() {

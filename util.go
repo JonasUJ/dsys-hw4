@@ -24,7 +24,7 @@ func Connect(port string, server *Server) {
 		log.Fatalf("fail to connect: %v", err)
 	}
 
-	go NewPeer(stream, server).Run()
+	go NewPeer(stream).OnRecv(server.RecvHandler)
 }
 
 func ToMessage(req ra.Request) *connect.Message {
