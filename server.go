@@ -26,6 +26,8 @@ func NewServer() *Server {
 }
 
 func (server *Server) RecvHandler(msg *connect.Message) {
+	ra.Recv(server, msg)
+
 	// Peers reply by sending a message with our pid
 	if server.GetPid() == msg.GetPid() {
 		server.replyQueue <- ra.Reply{}
@@ -76,6 +78,8 @@ func (server *Server) GetState() ra.State {
 
 // Impl RicartAgrawala
 func (server *Server) Multicast(req ra.Request) chan ra.Reply {
+	ra.Send(server)
+
 	for _, p := range server.peers {
 		p.stream.Send(ToMessage(req))
 	}
@@ -90,6 +94,7 @@ func (server *Server) Queue() chan ra.Request {
 
 // Impl RicartAgrawala
 func (server *Server) Reply(req ra.Request) {
+	ra.Send(server)
 	p := server.peers[req.GetPid()]
 	p.stream.Send(ToMessage(req))
 }
