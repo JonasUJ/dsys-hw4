@@ -2,13 +2,25 @@ syntax = "proto3";
 
 package connect;
 
-option go_package = "https://github.com/JonasUJ/dsys-hw2;connect";
+option go_package = "https://github.com/JonasUJ/dsys-hw4;connect";
 
 service Connect {
-    rpc Connect (stream Message) returns (stream Message);
+    rpc SendMessage (Message) returns (Void);
+    rpc JoinNetwork (PeerJoin) returns (ConnectedTo);
 }
 
 message Message {
     uint64 time = 1;
     uint32 pid = 2;
 }
+
+message PeerJoin {
+    string port = 1;
+    uint32 pid = 2;
+}
+
+message ConnectedTo {
+    uint32 pid = 1;
+}
+
+message Void {}

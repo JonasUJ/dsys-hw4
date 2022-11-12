@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -9,6 +10,7 @@ import (
 	ra "main/ricart-agrawala"
 	"net"
 	"os"
+	"strings"
 
 	"google.golang.org/grpc"
 )
@@ -22,13 +24,18 @@ var (
 func (server *Server) CriticalSection(chEnter, chExit chan struct{}) {
 	for {
 		<-chEnter
-		ra.Enter(server, 1 + len(server.peers))
+		l.Printf("attempting to enter critical section")
+		ra.Enter(server, 1+len(server.peers))
+
+		l.Printf("entered critical section at time %d", server.GetTime())
 
 		// Do critical stuff
-		l.Println("In critical section")
+		fmt.Println("In critical section")
 
 		<-chExit
+		l.Printf("leaving critical section")
 		ra.Exit(server)
+		l.Printf("left critical section")
 	}
 }
 
@@ -36,7 +43,7 @@ func main() {
 	flag.Parse()
 
 	// Setup logging
-	prefix := fmt.Sprintf("%-8s: ", *name)
+	prefix := fmt.Sprintf("%-8s(%d): ", *name, os.Getpid())
 	logfile := fmt.Sprintf("%s.log", *name)
 	file, err := os.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
@@ -47,7 +54,7 @@ func main() {
 	// We need a listener for grpc
 	listener, err := net.Listen("tcp", net.JoinHostPort("localhost", *port))
 	if err != nil {
-		log.Fatalf("fail to listen on port %s: %v", *port, err)
+		l.Fatalf("fail to listen on port %s: %v", *port, err)
 	}
 
 	server := NewServer()
@@ -58,7 +65,7 @@ func main() {
 		grpcServer := grpc.NewServer()
 		connect.RegisterConnectServer(grpcServer, server)
 		if err := grpcServer.Serve(listener); err != nil {
-			log.Fatalf("stopped serving: %v", err)
+			l.Fatalf("stopped serving: %v", err)
 		}
 	}()
 
@@ -68,12 +75,12 @@ func main() {
 	go server.CriticalSection(chEnter, chExit)
 
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Type 'lock' to request the lock, and 'unlock' to release it.")
+	fmt.Println("Type 'lock' to request the lock, and 'unlock' to release it.\nType 'connect <port>' to connect to a peer network at the given port.")
 	for scanner.Scan() {
-		input := scanner.Text()
+		input := strings.Split(scanner.Text(), " ")
 
 		// Dispatch commands
-		switch input {
+		switch input[0] {
 		case "lock":
 			switch server.GetState() {
 			case ra.Held:
@@ -81,7 +88,12 @@ func main() {
 			case ra.Wanted:
 				fmt.Println("Lock already wanted")
 			case ra.Released:
-				chEnter <- struct{}{}
+				l.Printf("attempting to lock")
+				select {
+				case <-chEnter:
+				default:
+					chEnter <- struct{}{}
+				}
 			}
 		case "unlock":
 			switch server.GetState() {
@@ -89,14 +101,31 @@ func main() {
 			case ra.Released:
 				fmt.Println("Lock is not held")
 			case ra.Held:
-				chExit <- struct{}{}
+				select {
+				case <-chExit:
+				default:
+					chExit  <- struct{}{}
+				}
 			}
+		case "connect":
+			client := server.ConnectClient(input[1])
+			connectedTo, err := client.JoinNetwork(context.Background(), &connect.PeerJoin{
+				Pid: uint32(os.Getpid()),
+				Port: *port,
+			})
+			if err != nil {
+				l.Fatalf("fail to join: %v", err)
+			}
+
+			l.Printf("connected to peer %d on port %s", connectedTo.GetPid(), input[1])
+
+			server.AddPeer(NewPeer(connectedTo.GetPid(), client))
 		default:
 			fmt.Printf("unknown command '%s'\n", input)
 		}
 	}
 
 	if scanner.Err() != nil {
-		log.Fatalf("fail to read stdin: %v", scanner.Err())
+		l.Fatalf("fail to read stdin: %v", scanner.Err())
 	}
 }

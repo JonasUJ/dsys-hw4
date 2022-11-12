@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.9
-// source: connect.proto
+// source: connect/connect.proto
 
 package connect
 
@@ -22,7 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConnectClient interface {
-	Connect(ctx context.Context, opts ...grpc.CallOption) (Connect_ConnectClient, error)
+	SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Void, error)
+	JoinNetwork(ctx context.Context, in *PeerJoin, opts ...grpc.CallOption) (*ConnectedTo, error)
 }
 
 type connectClient struct {
@@ -33,42 +34,30 @@ func NewConnectClient(cc grpc.ClientConnInterface) ConnectClient {
 	return &connectClient{cc}
 }
 
-func (c *connectClient) Connect(ctx context.Context, opts ...grpc.CallOption) (Connect_ConnectClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Connect_ServiceDesc.Streams[0], "/connect.Connect/Connect", opts...)
+func (c *connectClient) SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Void, error) {
+	out := new(Void)
+	err := c.cc.Invoke(ctx, "/connect.Connect/SendMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &connectConnectClient{stream}
-	return x, nil
+	return out, nil
 }
 
-type Connect_ConnectClient interface {
-	Send(*Message) error
-	Recv() (*Message, error)
-	grpc.ClientStream
-}
-
-type connectConnectClient struct {
-	grpc.ClientStream
-}
-
-func (x *connectConnectClient) Send(m *Message) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *connectConnectClient) Recv() (*Message, error) {
-	m := new(Message)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
+func (c *connectClient) JoinNetwork(ctx context.Context, in *PeerJoin, opts ...grpc.CallOption) (*ConnectedTo, error) {
+	out := new(ConnectedTo)
+	err := c.cc.Invoke(ctx, "/connect.Connect/JoinNetwork", in, out, opts...)
+	if err != nil {
 		return nil, err
 	}
-	return m, nil
+	return out, nil
 }
 
 // ConnectServer is the server API for Connect service.
 // All implementations must embed UnimplementedConnectServer
 // for forward compatibility
 type ConnectServer interface {
-	Connect(Connect_ConnectServer) error
+	SendMessage(context.Context, *Message) (*Void, error)
+	JoinNetwork(context.Context, *PeerJoin) (*ConnectedTo, error)
 	mustEmbedUnimplementedConnectServer()
 }
 
@@ -76,8 +65,11 @@ type ConnectServer interface {
 type UnimplementedConnectServer struct {
 }
 
-func (UnimplementedConnectServer) Connect(Connect_ConnectServer) error {
-	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
+func (UnimplementedConnectServer) SendMessage(context.Context, *Message) (*Void, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
+}
+func (UnimplementedConnectServer) JoinNetwork(context.Context, *PeerJoin) (*ConnectedTo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method JoinNetwork not implemented")
 }
 func (UnimplementedConnectServer) mustEmbedUnimplementedConnectServer() {}
 
@@ -92,30 +84,40 @@ func RegisterConnectServer(s grpc.ServiceRegistrar, srv ConnectServer) {
 	s.RegisterService(&Connect_ServiceDesc, srv)
 }
 
-func _Connect_Connect_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ConnectServer).Connect(&connectConnectServer{stream})
-}
-
-type Connect_ConnectServer interface {
-	Send(*Message) error
-	Recv() (*Message, error)
-	grpc.ServerStream
-}
-
-type connectConnectServer struct {
-	grpc.ServerStream
-}
-
-func (x *connectConnectServer) Send(m *Message) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *connectConnectServer) Recv() (*Message, error) {
-	m := new(Message)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _Connect_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Message)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(ConnectServer).SendMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/connect.Connect/SendMessage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectServer).SendMessage(ctx, req.(*Message))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Connect_JoinNetwork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PeerJoin)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnectServer).JoinNetwork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/connect.Connect/JoinNetwork",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectServer).JoinNetwork(ctx, req.(*PeerJoin))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // Connect_ServiceDesc is the grpc.ServiceDesc for Connect service.
@@ -124,14 +126,16 @@ func (x *connectConnectServer) Recv() (*Message, error) {
 var Connect_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "connect.Connect",
 	HandlerType: (*ConnectServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams: []grpc.StreamDesc{
+	Methods: []grpc.MethodDesc{
 		{
-			StreamName:    "Connect",
-			Handler:       _Connect_Connect_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
+			MethodName: "SendMessage",
+			Handler:    _Connect_SendMessage_Handler,
+		},
+		{
+			MethodName: "JoinNetwork",
+			Handler:    _Connect_JoinNetwork_Handler,
 		},
 	},
-	Metadata: "connect.proto",
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "connect/connect.proto",
 }
