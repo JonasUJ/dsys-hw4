@@ -1,0 +1,30 @@
+Charlie (13116): 21:55:36 changing state Released -> Released
+Charlie (13116): 21:55:58 dialing 1
+Charlie (13116): 21:55:58 connected to peer 5704
+Charlie (13116): 21:55:59 dialing 2
+Charlie (13116): 21:55:59 connected to peer 2640
+
+Charlie (13116): 21:58:46 changing time 0 -> 1
+Charlie (13116): 21:58:46 recv {pid:5704}
+Charlie (13116): 21:58:46 replying {0 5704}
+Charlie (13116): 21:58:46 changing time 1 -> 2
+Charlie (13116): 22:01:09 changing time 2 -> 3
+Charlie (13116): 22:01:09 recv {time:2 pid:2640}
+Charlie (13116): 22:01:09 replying {2 2640}
+Charlie (13116): 22:01:09 changing time 3 -> 4
+Charlie (13116): 22:01:27 attempting to lock
+Charlie (13116): 22:01:27 attempting to enter critical section
+Charlie (13116): 22:01:27 changing state Released -> Wanted
+Charlie (13116): 22:01:27 multicasting {4 13116}
+
+
+Charlie (13116): 22:02:23 got reply
+
+Charlie (13116): 22:08:24 got reply
+Charlie (13116): 22:08:24 changing state Wanted -> Held
+Charlie (13116): 22:08:24 changing time 4 -> 5
+Charlie (13116): 22:08:24 entered critical section at time 5
+
+Charlie (13116): 22:09:06 leaving critical section
+Charlie (13116): 22:09:06 changing state Held -> Released
+Charlie (13116): 22:09:06 left critical section

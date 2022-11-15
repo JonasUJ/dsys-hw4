@@ -1,0 +1,27 @@
+Bob     (2640): 21:55:11 changing state Released -> Released
+Bob     (2640): 21:55:56 dialing 1
+Bob     (2640): 21:55:56 connected to peer 5704
+Bob     (2640): 21:55:58 dialing 3
+Bob     (2640): 21:55:58 connected to peer 13116
+
+Bob     (2640): 21:58:46 changing time 0 -> 1
+Bob     (2640): 21:58:46 recv {pid:5704}
+Bob     (2640): 21:58:46 replying {0 5704}
+Bob     (2640): 21:58:46 changing time 1 -> 2
+Bob     (2640): 22:01:09 attempting to lock
+Bob     (2640): 22:01:09 attempting to enter critical section
+Bob     (2640): 22:01:09 changing state Released -> Wanted
+Bob     (2640): 22:01:09 multicasting {2 2640}
+Bob     (2640): 22:01:09 got reply
+Bob     (2640): 22:01:27 recv {time:4 pid:13116}
+
+Bob     (2640): 22:02:23 got reply
+Bob     (2640): 22:02:23 changing state Wanted -> Held
+Bob     (2640): 22:02:23 changing time 2 -> 3
+Bob     (2640): 22:02:23 entered critical section at time 3
+
+Bob     (2640): 22:08:24 leaving critical section
+Bob     (2640): 22:08:24 changing state Held -> Released
+Bob     (2640): 22:08:24 replying {4 13116}
+Bob     (2640): 22:08:24 changing time 3 -> 4
+Bob     (2640): 22:08:24 left critical section

@@ -1,0 +1,99 @@
+// the three clients are created
+Alice   (5704): 21:54:24 changing state Released -> Released
+Bob     (2640): 21:55:11 changing state Released -> Released
+Charlie (13116): 21:55:36 changing state Released -> Released
+
+
+//Alice dials up the other clients
+Alice   (5704): 21:55:55 dialing 2
+Alice   (5704): 21:55:56 dialing 2
+Alice   (5704): 21:55:56 connected to peer 2640
+Alice   (5704): 21:55:56 connected to peer 2640 on port 2
+Alice   (5704): 21:55:58 dialing 3
+Alice   (5704): 21:55:58 dialing 3
+Alice   (5704): 21:55:58 connected to peer 13116
+Alice   (5704): 21:55:59 connected to peer 13116 on port 3
+
+Bob     (2640): 21:55:56 dialing 1
+Bob     (2640): 21:55:56 connected to peer 5704
+Bob     (2640): 21:55:58 dialing 3
+Bob     (2640): 21:55:58 connected to peer 13116
+
+Charlie (13116): 21:55:58 dialing 1
+Charlie (13116): 21:55:58 connected to peer 5704
+Charlie (13116): 21:55:59 dialing 2
+Charlie (13116): 21:55:59 connected to peer 2640
+
+
+//all clients lock in the order Alice -> Bob -> Charlie
+Alice   (5704): 21:58:46 attempting to lock
+Alice   (5704): 21:58:46 attempting to enter critical section
+Alice   (5704): 21:58:46 changing state Released -> Wanted
+Alice   (5704): 21:58:46 multicasting {0 5704}
+Alice   (5704): 21:58:46 got reply
+Alice   (5704): 21:58:46 got reply
+Alice   (5704): 21:58:46 changing state Wanted -> Held
+Alice   (5704): 21:58:46 changing time 0 -> 1
+Alice   (5704): 21:58:46 entered critical section at time 1
+
+Alice   (5704): 22:01:09 changing time 1 -> 3
+Alice   (5704): 22:01:09 recv {time:2 pid:2640}
+Alice   (5704): 22:01:27 changing time 3 -> 5
+Alice   (5704): 22:01:27 recv {time:4 pid:13116}
+
+Bob     (2640): 21:58:46 changing time 0 -> 1
+Bob     (2640): 21:58:46 recv {pid:5704}
+Bob     (2640): 21:58:46 replying {0 5704}
+Bob     (2640): 21:58:46 changing time 1 -> 2
+Bob     (2640): 22:01:09 attempting to lock
+Bob     (2640): 22:01:09 attempting to enter critical section
+Bob     (2640): 22:01:09 changing state Released -> Wanted
+Bob     (2640): 22:01:09 multicasting {2 2640}
+Bob     (2640): 22:01:09 got reply
+Bob     (2640): 22:01:27 recv {time:4 pid:13116}
+
+Charlie (13116): 21:58:46 changing time 0 -> 1
+Charlie (13116): 21:58:46 recv {pid:5704}
+Charlie (13116): 21:58:46 replying {0 5704}
+Charlie (13116): 21:58:46 changing time 1 -> 2
+Charlie (13116): 22:01:09 changing time 2 -> 3
+Charlie (13116): 22:01:09 recv {time:2 pid:2640}
+Charlie (13116): 22:01:09 replying {2 2640}
+Charlie (13116): 22:01:09 changing time 3 -> 4
+Charlie (13116): 22:01:27 attempting to lock
+Charlie (13116): 22:01:27 attempting to enter critical section
+Charlie (13116): 22:01:27 changing state Released -> Wanted
+Charlie (13116): 22:01:27 multicasting {4 13116}
+
+//Alice unlocks
+Alice   (5704): 22:02:23 leaving critical section
+Alice   (5704): 22:02:23 changing state Held -> Released
+Alice   (5704): 22:02:23 replying {2 2640}
+Alice   (5704): 22:02:23 changing time 5 -> 6
+Alice   (5704): 22:02:23 replying {4 13116}
+Alice   (5704): 22:02:23 changing time 6 -> 7
+Alice   (5704): 22:02:23 left critical section
+
+Bob     (2640): 22:02:23 got reply
+Bob     (2640): 22:02:23 changing state Wanted -> Held
+Bob     (2640): 22:02:23 changing time 2 -> 3
+Bob     (2640): 22:02:23 entered critical section at time 3
+
+Charlie (13116): 22:02:23 got reply
+
+//bob unlocks
+Bob     (2640): 22:08:24 leaving critical section
+Bob     (2640): 22:08:24 changing state Held -> Released
+Bob     (2640): 22:08:24 replying {4 13116}
+Bob     (2640): 22:08:24 changing time 3 -> 4
+Bob     (2640): 22:08:24 left critical section
+
+Charlie (13116): 22:08:24 got reply
+Charlie (13116): 22:08:24 changing state Wanted -> Held
+Charlie (13116): 22:08:24 changing time 4 -> 5
+Charlie (13116): 22:08:24 entered critical section at time 5
+
+//Charlie unlocks
+Charlie (13116): 22:09:06 leaving critical section
+Charlie (13116): 22:09:06 changing state Held -> Released
+Charlie (13116): 22:09:06 left critical section
