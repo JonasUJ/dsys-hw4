@@ -10,7 +10,7 @@ Usage of dsys-hw4:
         Port to listen on (default "50050")
 ```
 
-`name` is used solely for naming log files; logs are written to `<name>.log`. A handy way to view the logs once all processes are running is `tail -fqn 0 *.log`.
+`name` is used solely for naming log files; logs are written to `<name>.log`. A handy way to view the logs once all processes are running is `tail -fqn 0 *.log`. Or to view the logs retroactively try `sort -k3 *.log`, and better yet, combine them `sort -k3 *.log | tail -n10 && tail -fqn0 *.log` :)
 
 ## Run
 
